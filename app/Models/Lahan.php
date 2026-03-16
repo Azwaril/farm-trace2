@@ -17,11 +17,12 @@ class Lahan extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class,'users_id');
+        return $this->belongsTo(User::class);
     }
 
     public function penanaman()
     {
-        return $this->hasMany(Penanaman::class,'lahan_id');
+        return $this->hasMany(Penanaman::class);
     }
+    
 }

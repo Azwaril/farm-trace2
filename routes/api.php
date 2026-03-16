@@ -6,7 +6,9 @@ use App\Http\Controllers\PenanamanController;
 use App\Http\Controllers\TanamanController;
 use App\Http\Controllers\VarietasController;
 use App\Http\Controllers\PupukController;
+use App\Http\Controllers\RiwayatPupukController;
 use App\Http\Controllers\ArtikelController;
+use App\Http\Controllers\PanenController;
 
 Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
@@ -30,5 +32,7 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('varietas',VarietasController::class);
     Route::apiResource('penanaman',PenanamanController::class);
     Route::apiResource('pupuk',PupukController::class);
+    Route::apiResource('riwayat-pupuk',RiwayatPupukController::class);
+    Route::apiResource('panen',PanenController::class);
 
 });

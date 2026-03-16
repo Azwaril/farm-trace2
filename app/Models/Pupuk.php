@@ -13,4 +13,5 @@ class Pupuk extends Model
         'deskripsi',
         'image'
     ];
+    
 }

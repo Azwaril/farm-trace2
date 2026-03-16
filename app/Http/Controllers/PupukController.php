@@ -8,9 +8,6 @@ use Illuminate\Http\Request;
 class PupukController extends Controller
 {
 
-    // ==========================
-    // GET semua pupuk
-    // ==========================
     public function index()
     {
         $data = Pupuk::all();
@@ -21,9 +18,6 @@ class PupukController extends Controller
         ], 200);
     }
 
-    // ==========================
-    // POST pupuk
-    // ==========================
     public function store(Request $request)
     {
         $request->validate([
@@ -32,18 +26,19 @@ class PupukController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
-        $path = null;
+        $url = null;
 
         if ($request->hasFile('image')) {
 
-            $path = $request->file('image')->store('pupuk', 'public');
+            $result = $request->file('image')->storeOnCloudinary('farm-trace/pupuk');
 
+            $url = $result->getSecurePath();
         }
 
         $pupuk = Pupuk::create([
             'nama_pupuk' => $request->nama_pupuk,
             'deskripsi' => $request->deskripsi,
-            'image' => $path
+            'image' => $url
         ]);
 
         return response()->json([
@@ -52,9 +47,6 @@ class PupukController extends Controller
         ], 201);
     }
 
-    // ==========================
-    // GET detail pupuk
-    // ==========================
     public function show($id)
     {
         $pupuk = Pupuk::findOrFail($id);
@@ -65,31 +57,23 @@ class PupukController extends Controller
         ], 200);
     }
 
-    // ==========================
-    // UPDATE pupuk
-    // ==========================
     public function update(Request $request, $id)
     {
         $pupuk = Pupuk::findOrFail($id);
 
-        $request->validate([
-            'nama_pupuk' => 'nullable|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
-        ]);
-
-        $path = $pupuk->image;
+        $url = $pupuk->image;
 
         if ($request->hasFile('image')) {
 
-            $path = $request->file('image')->store('pupuk', 'public');
+            $result = $request->file('image')->storeOnCloudinary('farm-trace/pupuk');
 
+            $url = $result->getSecurePath();
         }
 
         $pupuk->update([
             'nama_pupuk' => $request->nama_pupuk ?? $pupuk->nama_pupuk,
             'deskripsi' => $request->deskripsi ?? $pupuk->deskripsi,
-            'image' => $path
+            'image' => $url
         ]);
 
         return response()->json([
@@ -98,9 +82,6 @@ class PupukController extends Controller
         ], 200);
     }
 
-    // ==========================
-    // DELETE pupuk
-    // ==========================
     public function destroy($id)
     {
         $pupuk = Pupuk::findOrFail($id);

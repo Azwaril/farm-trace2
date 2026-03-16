@@ -14,4 +14,14 @@ class RiwayatPupuk extends Model
         'tanggal_pemupukan',
         'dosis'
     ];
+
+    public function penanaman()
+    {
+        return $this->belongsTo(Penanaman::class);
+    }
+
+    public function pupuk()
+    {
+        return $this->belongsTo(Pupuk::class);
+    }
 }

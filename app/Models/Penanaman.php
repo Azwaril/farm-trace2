@@ -30,4 +30,9 @@ class Penanaman extends Model
     {
         return $this->belongsTo(Varietas::class);
     }
+
+    public function riwayatPupuk()
+    {
+        return $this->hasMany(RiwayatPupuk::class);
+    }
 }

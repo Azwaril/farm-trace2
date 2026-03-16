@@ -10,8 +10,21 @@ class Panen extends Model
 
     protected $fillable = [
         'penanaman_id',
+        'riwayat_pupuk_id',
         'tanggal_panen',
         'jumlah_panen',
         'satuan'
     ];
+
+    // relasi ke penanaman
+    public function penanaman()
+    {
+        return $this->belongsTo(Penanaman::class);
+    }
+
+    // relasi ke riwayat pupuk
+    public function riwayat_pupuk()
+    {
+        return $this->belongsTo(RiwayatPupuk::class);
+    }
 }
