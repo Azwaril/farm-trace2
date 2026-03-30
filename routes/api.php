@@ -12,16 +12,7 @@ use App\Http\Controllers\PanenController;
 
 Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
-Route::get('/artikel', [ArtikelController::class, 'index']);
 Route::get('/artikel/{id}', [ArtikelController::class, 'show']);
-
-Route::middleware(['auth:api','admin'])->group(function () {
-
-    Route::post('/artikel',[ArtikelController::class,'store']);
-    Route::put('/artikel/{id}',[ArtikelController::class,'update']);
-    Route::delete('/artikel/{id}',[ArtikelController::class,'destroy']);
-
-});
 
 Route::middleware('auth:api')->group(function () {
     
@@ -34,5 +25,13 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('pupuk',PupukController::class);
     Route::apiResource('riwayat-pupuk',RiwayatPupukController::class);
     Route::apiResource('panen',PanenController::class);
+    
+    });
+
+Route::middleware(['auth:api','admin'])->group(function () {
+
+    Route::post('/artikel',[ArtikelController::class,'store']);
+    Route::put('/artikel/{id}',[ArtikelController::class,'update']);
+    Route::delete('/artikel/{id}',[ArtikelController::class,'destroy']);
 
 });
