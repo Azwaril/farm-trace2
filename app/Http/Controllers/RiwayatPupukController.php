@@ -3,14 +3,40 @@
 namespace App\Http\Controllers;
 
 use App\Models\RiwayatPupuk;
+use App\Models\Penanaman;
 use Illuminate\Http\Request;
 
 class RiwayatPupukController extends Controller
 {
 
+    // ===============================
+    // GET semua riwayat pupuk
+    // ===============================
     public function index()
     {
-        $data = RiwayatPupuk::with(['penanaman','pupuk'])->latest()->get();
+        $user = auth('api')->user();
+
+        if ($user->role == 'admin') {
+
+            $data = RiwayatPupuk::with(['penanaman.lahan','pupuk'])
+                        ->latest()
+                        ->get();
+
+        } else if ($user->role == 'petani') {
+
+            $data = RiwayatPupuk::whereHas('penanaman.lahan', function ($query) use ($user) {
+                        $query->where('users_id', $user->id);
+                    })
+                    ->with(['penanaman','pupuk'])
+                    ->latest()
+                    ->get();
+
+        } else {
+
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
 
         return response()->json([
             'message' => 'Data riwayat pupuk berhasil diambil',
@@ -18,14 +44,35 @@ class RiwayatPupukController extends Controller
         ],200);
     }
 
+
+    // ===============================
+    // POST riwayat pupuk
+    // ===============================
     public function store(Request $request)
     {
+        $user = auth('api')->user();
+
+        if ($user->role == 'konsumen') {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
+
         $request->validate([
             'penanaman_id' => 'required|exists:penanaman,id',
             'pupuk_id' => 'required|exists:pupuk,id',
             'tanggal_pemupukan' => 'required|date',
             'dosis' => 'required|numeric'
         ]);
+
+        $penanaman = Penanaman::with('lahan')->findOrFail($request->penanaman_id);
+
+        // Petani hanya boleh menambahkan di lahannya sendiri
+        if ($user->role == 'petani' && $penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
 
         $data = RiwayatPupuk::create([
             'penanaman_id' => $request->penanaman_id,
@@ -40,9 +87,27 @@ class RiwayatPupukController extends Controller
         ],201);
     }
 
+
+    // ===============================
+    // GET detail riwayat pupuk
+    // ===============================
     public function show($id)
     {
-        $data = RiwayatPupuk::with(['penanaman','pupuk'])->findOrFail($id);
+        $user = auth('api')->user();
+
+        $data = RiwayatPupuk::with(['penanaman.lahan','pupuk'])->findOrFail($id);
+
+        if ($user->role == 'petani' && $data->penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
+
+        if ($user->role == 'konsumen') {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
 
         return response()->json([
             'message' => 'Detail riwayat pupuk',
@@ -50,19 +115,35 @@ class RiwayatPupukController extends Controller
         ],200);
     }
 
+
+    // ===============================
+    // UPDATE riwayat pupuk
+    // ===============================
     public function update(Request $request, $id)
     {
-        $data = RiwayatPupuk::findOrFail($id);
+        $user = auth('api')->user();
+
+        $data = RiwayatPupuk::with('penanaman.lahan')->findOrFail($id);
+
+        if ($user->role == 'konsumen') {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
+
+        if ($user->role == 'petani' && $data->penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
 
         $request->validate([
-            'penanaman_id' => 'sometimes|exists:penanaman,id',
-            'pupuk_id' => 'sometimes|exists:pupuk,id',
             'tanggal_pemupukan' => 'sometimes|date',
-            'dosis' => 'sometimes|numeric'
+            'dosis' => 'sometimes|numeric',
+            'pupuk_id' => 'sometimes|exists:pupuk,id'
         ]);
 
         $data->update($request->only([
-            'penanaman_id',
             'pupuk_id',
             'tanggal_pemupukan',
             'dosis'
@@ -74,9 +155,28 @@ class RiwayatPupukController extends Controller
         ],200);
     }
 
+
+    // ===============================
+    // DELETE riwayat pupuk
+    // ===============================
     public function destroy($id)
     {
-        $data = RiwayatPupuk::findOrFail($id);
+        $user = auth('api')->user();
+
+        $data = RiwayatPupuk::with('penanaman.lahan')->findOrFail($id);
+
+        if ($user->role == 'konsumen') {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
+
+        if ($user->role == 'petani' && $data->penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
+
         $data->delete();
 
         return response()->json([

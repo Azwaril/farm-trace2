@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('tanaman', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('users_id')->constrained('users')->cascadeOnDelete();
             $table->string('nama_tanaman');
             $table->text('deskripsi')->nullable();
             $table->string('image')->nullable(); // URL gambar dari Cloudinary

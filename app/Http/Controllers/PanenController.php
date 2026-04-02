@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Panen;
+use App\Models\Penanaman;
 use Illuminate\Http\Request;
 
 class PanenController extends Controller
@@ -13,13 +14,25 @@ class PanenController extends Controller
     // ===============================
     public function index()
     {
-        $data = Panen::with(['penanaman','riwayat_pupuk'])->get();
+        $user = auth('api')->user();
+
+        if ($user->role == 'admin') {
+
+            $data = Panen::with(['penanaman','riwayat_pupuk'])->get();
+
+        } else {
+
+            $data = Panen::whereHas('penanaman.lahan', function ($query) use ($user) {
+                $query->where('users_id', $user->id);
+            })->with(['penanaman','riwayat_pupuk'])->get();
+        }
 
         return response()->json([
             'message' => 'Data panen berhasil diambil',
             'data' => $data
         ]);
     }
+
 
     // ===============================
     // POST tambah panen
@@ -33,6 +46,17 @@ class PanenController extends Controller
             'jumlah_panen' => 'required|integer',
             'satuan' => 'nullable|string'
         ]);
+
+        $user = auth('api')->user();
+
+        $penanaman = Penanaman::with('lahan')->findOrFail($request->penanaman_id);
+
+        // Petani hanya boleh panen dari lahannya sendiri
+        if ($user->role == 'petani' && $penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
 
         $data = Panen::create([
             'penanaman_id' => $request->penanaman_id,
@@ -48,12 +72,21 @@ class PanenController extends Controller
         ],201);
     }
 
+
     // ===============================
     // GET detail panen
     // ===============================
     public function show($id)
     {
-        $data = Panen::with(['penanaman','riwayat_pupuk'])->findOrFail($id);
+        $user = auth('api')->user();
+
+        $data = Panen::with(['penanaman.lahan','riwayat_pupuk'])->findOrFail($id);
+
+        if ($user->role == 'petani' && $data->penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
 
         return response()->json([
             'message' => 'Detail data panen',
@@ -61,14 +94,33 @@ class PanenController extends Controller
         ]);
     }
 
+
     // ===============================
     // UPDATE panen
     // ===============================
     public function update(Request $request,$id)
     {
-        $data = Panen::findOrFail($id);
+        $user = auth('api')->user();
 
-        $data->update($request->all());
+        $data = Panen::with('penanaman.lahan')->findOrFail($id);
+
+        if ($user->role == 'petani' && $data->penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
+
+        $request->validate([
+            'tanggal_panen' => 'required|date',
+            'jumlah_panen' => 'required|integer',
+            'satuan' => 'nullable|string'
+        ]);
+
+        $data->update([
+            'tanggal_panen' => $request->tanggal_panen,
+            'jumlah_panen' => $request->jumlah_panen,
+            'satuan' => $request->satuan ?? $data->satuan
+        ]);
 
         return response()->json([
             'message' => 'Data panen berhasil diupdate',
@@ -76,12 +128,22 @@ class PanenController extends Controller
         ]);
     }
 
+
     // ===============================
     // DELETE panen
     // ===============================
     public function destroy($id)
     {
-        $data = Panen::findOrFail($id);
+        $user = auth('api')->user();
+
+        $data = Panen::with('penanaman.lahan')->findOrFail($id);
+
+        if ($user->role == 'petani' && $data->penanaman->lahan->users_id != $user->id) {
+            return response()->json([
+                'message' => 'Akses ditolak'
+            ],403);
+        }
+
         $data->delete();
 
         return response()->json([
